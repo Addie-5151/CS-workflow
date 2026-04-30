@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS Operations Manual</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0f1f3d;
+    --blue: #1a3a6e;
+    --teal: #00857a;
+    --teal-light: #00a896;
+    --gold: #f0a500;
+    --coral: #e85d2f;
+    --cream: #f8f5ef;
+    --white: #ffffff;
+    --gray-100: #f2f0ec;
+    --gray-200: #e0ddd6;
+    --gray-400: #9a968d;
+    --gray-600: #5c5850;
+    --shadow-sm: 0 2px 8px rgba(15,31,61,0.08);
+    --shadow-md: 0 8px 32px rgba(15,31,61,0.12);
+    --shadow-lg: 0 20px 60px rgba(15,31,61,0.16);
+    --radius: 16px;
+    --radius-sm: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ── PASSWORD SCREEN ── */
+  #lock-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--navy);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0;
+  }
+  #lock-screen .lock-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, #1a3a6e 0%, #0f1f3d 100%);
+    overflow: hidden;
+  }
+  #lock-screen .lock-bg::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  .lock-card {
+    position: relative; z-index: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px;
+    padding: 56px 48px 48px;
+    width: 420px;
+    max-width: 90vw;
+    backdrop-filter: blur(20px);
+    text-align: center;
+    animation: fadeUp 0.6s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .lock-icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, var(--teal), var(--teal-light));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 28px;
+    font-size: 28px;
+  }
+  .lock-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px; color: #fff;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .lock-sub {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; color: rgba(255,255,255,0.45);
+    margin-bottom: 36px;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .lock-input-wrap {
+    position: relative; margin-bottom: 16px;
+  }
+  .lock-input {
+    width: 100%;
+    padding: 16px 48px 16px 20px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    color: #fff; font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: 3px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .lock-input:focus { border-color: var(--teal-light); }
+  .lock-input::placeholder { letter-spacing: 1px; color: rgba(255,255,255,0.3); }
+  .toggle-pw {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: rgba(255,255,255,0.4); font-size: 16px;
+    transition: color 0.2s;
+  }
+  .toggle-pw:hover { color: rgba(255,255,255,0.8); }
+  .lock-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--teal), var(--teal-light));
+    border: none; border-radius: 12px;
+    color: #fff; font-size: 15px; font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .lock-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .lock-btn:active { transform: translateY(0); }
+  .lock-error {
+    margin-top: 14px; font-size: 13px;
+    color: #ff7f7f; font-family: 'DM Sans', sans-serif;
+    height: 18px;
+  }
+  .lock-shake { animation: shake 0.4s ease; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25%      { transform: translateX(-8px); }
+    75%      { transform: translateX(8px); }
+  }
+
+  /* ── MAIN CONTENT ── */
+  #main { display: none; }
+  #main.visible { display: block; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--navy);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .site-header {
+    background: var(--navy);
+    padding: 0;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+  .header-inner {
+    max-width: 1100px; margin: 0 auto;
+    padding: 18px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px; color: #fff;
+    letter-spacing: -0.3px;
+  }
+  .header-logo span { color: var(--teal-light); }
+  .header-meta {
+    font-size: 12px; color: rgba(255,255,255,0.4);
+    font-weight: 300; letter-spacing: 0.5px;
+  }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 60%, #1e4d7b 100%);
+    padding: 72px 32px 80px;
+    text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 80% at 80% 20%, rgba(0,168,150,0.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--teal-light); margin-bottom: 16px;
+    animation: fadeUp 0.5s 0.1s both;
+  }
+  .hero-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(32px, 5vw, 52px);
+    color: #fff; line-height: 1.15;
+    margin-bottom: 16px;
+    animation: fadeUp 0.5s 0.2s both;
+  }
+  .hero-sub {
+    font-size: 16px; color: rgba(255,255,255,0.55);
+    font-weight: 300; max-width: 500px; margin: 0 auto 40px;
+    animation: fadeUp 0.5s 0.3s both;
+  }
+  .phase-pills {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    justify-content: center;
+    animation: fadeUp 0.5s 0.4s both;
+  }
+  .phase-pill {
+    padding: 8px 18px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50px;
+    font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.7);
+    cursor: pointer; transition: all 0.2s;
+    background: rgba(255,255,255,0.06);
+    text-decoration: none;
+  }
+  .phase-pill:hover {
+    background: rgba(255,255,255,0.15); color: #fff;
+    border-color: rgba(255,255,255,0.3);
+    transform: translateY(-1px);
+  }
+
+  /* CONTENT */
+  .content { max-width: 1100px; margin: 0 auto; padding: 56px 32px 80px; }
+
+  /* PHASE SECTION */
+  .phase-section {
+    margin-bottom: 48px;
+    animation: fadeUp 0.5s both;
+  }
+
+  .phase-header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 20px 28px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: filter 0.2s;
+  }
+  .phase-header:hover { filter: brightness(1.05); }
+  .phase-num {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px; color: #fff;
+    flex-shrink: 0;
+  }
+  .phase-title-text {
+    flex: 1;
+  }
+  .phase-title-text h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px; color: #fff; font-weight: 400;
+    line-height: 1.2;
+  }
+  .phase-title-text p {
+    font-size: 12px; color: rgba(255,255,255,0.6);
+    margin-top: 2px; font-weight: 300;
+  }
+  .phase-chevron {
+    font-size: 18px; color: rgba(255,255,255,0.6);
+    transition: transform 0.3s;
+  }
+  .phase-section.open .phase-chevron { transform: rotate(180deg); }
+
+  .phase-body {
+    background: var(--white);
+    border-radius: 0 0 var(--radius) var(--radius);
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: var(--shadow-md);
+  }
+  .phase-section.open .phase-body { max-height: 3000px; }
+  .phase-body-inner { padding: 32px; }
+
+  /* COLORS PER PHASE */
+  .ph1 .phase-header { background: linear-gradient(135deg, #1a5276, #2471a3); }
+  .ph2 .phase-header { background: linear-gradient(135deg, #00857a, #00a896); }
+  .ph3 .phase-header { background: linear-gradient(135deg, #6c3483, #9b59b6); }
+  .ph4 .phase-header { background: linear-gradient(135deg, #b7770d, #f0a500); }
+  .ph5 .phase-header { background: linear-gradient(135deg, #c0392b, #e74c3c); }
+  .ph-gov .phase-header { background: linear-gradient(135deg, #2c3e50, #485c70); }
+
+  /* ALWAYS-ON badge */
+  .always-on-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 50px;
+    background: rgba(255,255,255,0.15);
+    font-size: 11px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; color: rgba(255,255,255,0.85);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .always-on-badge .pulse {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #6ee7b7;
+    box-shadow: 0 0 0 0 rgba(110,231,183,0.6);
+    animation: pulseAnim 1.8s infinite;
+  }
+  @keyframes pulseAnim {
+    0%   { box-shadow: 0 0 0 0 rgba(110,231,183,0.6); }
+    70%  { box-shadow: 0 0 0 7px rgba(110,231,183,0); }
+    100% { box-shadow: 0 0 0 0 rgba(110,231,183,0); }
+  }
+
+  /* GOV complaint specific */
+  .gov-meta-row {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px;
+  }
+  .gov-meta-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 50px;
+    font-size: 12px; font-weight: 500;
+    border: 1px solid var(--gray-200);
+    color: var(--gray-600); background: var(--white);
+  }
+  .doc-checklist {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;
+  }
+  .doc-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: var(--white); border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-size: 13px; color: var(--gray-600);
+  }
+  .doc-item .doc-icon { font-size: 15px; flex-shrink: 0; }
+  @media (max-width: 600px) {
+    .doc-checklist { grid-template-columns: 1fr; }
+  }
+
+  /* STEPS */
+  .steps-flow {
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .step-item {
+    display: flex; gap: 20px; position: relative;
+  }
+  .step-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 19px; top: 48px; bottom: 0;
+    width: 2px;
+    background: var(--gray-200);
+    z-index: 0;
+  }
+  .step-dot {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff;
+    flex-shrink: 0; margin-top: 4px; position: relative; z-index: 1;
+  }
+  .step-content {
+    flex: 1; padding-bottom: 28px;
+  }
+  .step-content h3 {
+    font-size: 15px; font-weight: 600; color: var(--navy);
+    margin-bottom: 8px;
+  }
+  .step-content p, .step-content li {
+    font-size: 14px; color: var(--gray-600);
+    line-height: 1.65;
+  }
+  .step-content ul { padding-left: 18px; margin-top: 6px; }
+  .step-content li { margin-bottom: 4px; }
+
+  /* DECISION BRANCH */
+  .branch-wrap {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    margin-top: 12px;
+  }
+  .branch-card {
+    padding: 16px 20px;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid;
+  }
+  .branch-card.refund {
+    background: #f0faf9; border-color: var(--teal);
+  }
+  .branch-card.postpone {
+    background: #fdf6e3; border-color: var(--gold);
+  }
+  .branch-card h4 {
+    font-size: 13px; font-weight: 600; margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .branch-card.refund h4 { color: var(--teal); }
+  .branch-card.postpone h4 { color: #b7770d; }
+  .branch-card p, .branch-card li {
+    font-size: 13px; color: var(--gray-600); line-height: 1.6;
+  }
+  .branch-card ul { padding-left: 16px; margin-top: 4px; }
+
+  /* GRID LAYOUT */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 700px) {
+    .two-col, .three-col { grid-template-columns: 1fr; }
+    .branch-wrap { grid-template-columns: 1fr; }
+  }
+
+  /* CARD */
+  .info-card {
+    background: var(--gray-100);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+  }
+  .info-card h3 {
+    font-size: 14px; font-weight: 600; color: var(--navy);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .info-card h3 .card-icon { font-size: 16px; }
+  .info-card p, .info-card li {
+    font-size: 13px; color: var(--gray-600); line-height: 1.65;
+  }
+  .info-card ul { padding-left: 16px; }
+  .info-card li { margin-bottom: 5px; }
+
+  /* ROLE CARDS */
+  .role-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+    position: relative; overflow: hidden;
+  }
+  .role-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  }
+  .role-card.addie::before { background: var(--gold); }
+  .role-card.xiaoye::before { background: var(--teal); }
+  .role-card.xiaoshao::before { background: var(--coral); }
+  .role-card h3 {
+    font-size: 13px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; margin-bottom: 12px;
+  }
+  .role-card.addie h3 { color: var(--gold); }
+  .role-card.xiaoye h3 { color: var(--teal); }
+  .role-card.xiaoshao h3 { color: var(--coral); }
+  .role-card ul { padding-left: 0; list-style: none; }
+  .role-card li {
+    font-size: 13px; color: var(--gray-600); line-height: 1.6;
+    padding: 5px 0; border-bottom: 1px solid var(--gray-100);
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .role-card li:last-child { border-bottom: none; }
+  .role-card li::before { content: '✓'; color: currentColor; font-weight: 700; flex-shrink: 0; }
+  .role-card.addie li::before { color: var(--gold); }
+  .role-card.xiaoye li::before { color: var(--teal); }
+  .role-card.xiaoshao li::before { color: var(--coral); }
+
+  /* FLOW ARROW */
+  .flow-row {
+    display: flex; align-items: flex-start; gap: 0;
+    flex-wrap: wrap;
+  }
+  .flow-node {
+    flex: 1; min-width: 160px;
+    background: var(--gray-100);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    position: relative;
+  }
+  .flow-node h4 {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; margin-bottom: 6px; color: var(--navy);
+  }
+  .flow-node p { font-size: 12px; color: var(--gray-600); line-height: 1.5; }
+  .flow-arrow {
+    flex-shrink: 0; display: flex; align-items: center;
+    padding: 0 8px; color: var(--gray-400); font-size: 18px;
+    margin-top: 16px;
+  }
+
+  /* NUMBERED LIST ITEMS */
+  .supply-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .supply-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    background: var(--white); border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200); font-size: 13px; color: var(--gray-600);
+  }
+  .supply-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--navy); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+
+  /* TAG/BADGE */
+  .badge {
+    display: inline-block; padding: 3px 10px;
+    border-radius: 50px; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .badge-blue { background: #e8f0fa; color: #1a3a6e; }
+  .badge-teal { background: #e0f5f3; color: var(--teal); }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--gray-200); margin: 24px 0; }
+
+  /* ALERT BOX */
+  .alert-box {
+    background: #fff8e6; border: 1px solid #fcd98c;
+    border-radius: var(--radius-sm); padding: 14px 18px;
+    display: flex; gap: 12px; align-items: flex-start;
+    margin-bottom: 20px;
+  }
+  .alert-box .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .alert-box p { font-size: 13px; color: #7a5500; line-height: 1.6; }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--gray-400);
+    margin-bottom: 16px; margin-top: 28px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  /* FOOTER */
+  .site-footer {
+    background: var(--navy); color: rgba(255,255,255,0.3);
+    text-align: center; padding: 24px 32px;
+    font-size: 12px; letter-spacing: 0.3px;
+  }
+
+  /* SCROLL TO TOP */
+  .to-top {
+    position: fixed; bottom: 28px; right: 28px;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--navy); color: #fff; border: none;
+    font-size: 20px; cursor: pointer;
+    box-shadow: var(--shadow-md);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s, transform 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .to-top.visible { opacity: 1; pointer-events: all; }
+  .to-top:hover { transform: translateY(-2px); }
+</style>
+</head>
+<body>
+
+<!-- ══════════ LOCK SCREEN ══════════ -->
+<div id="lock-screen">
+  <div class="lock-bg"></div>
+  <div class="lock-card" id="lock-card">
+    <div class="lock-icon">🔐</div>
+    <h1 class="lock-title">CS Operations Manual</h1>
+    <p class="lock-sub">Restricted Access · Enter Password</p>
+    <div class="lock-input-wrap">
+      <input type="password" id="pw-input" class="lock-input" placeholder="Enter password" autocomplete="off" />
+      <button class="toggle-pw" onclick="togglePw()" id="pw-eye">👁</button>
+    </div>
+    <button class="lock-btn" onclick="checkPw()">Unlock</button>
+    <div class="lock-error" id="pw-error"></div>
+  </div>
+</div>
+
+<!-- ══════════ MAIN ══════════ -->
+<div id="main">
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-logo">CS Ops <span>Manual</span></div>
+      <div class="header-meta">Race Operations · Information Desk</div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-eyebrow">Customer Service · Operations</div>
+    <h1 class="hero-title">Race Day Operations<br>Standard Procedures</h1>
+    <p class="hero-sub">Complete guide for athlete services, race day logistics, and post-event processes.</p>
+    <div class="phase-pills">
+      <a class="phase-pill" href="#ph1">① Before Race – Part 1</a>
+      <a class="phase-pill" href="#ph2">② Before Race – Part 2</a>
+      <a class="phase-pill" href="#ph3">③ Pre-Race Prep</a>
+      <a class="phase-pill" href="#ph4">④ Race Day</a>
+      <a class="phase-pill" href="#ph5">⑤ Post-Race</a>
+      <a class="phase-pill" href="#ph-gov" style="border-color:rgba(110,231,183,0.4);color:rgba(110,231,183,0.9);">⚖ Gov't Complaints</a>
+    </div>
+  </section>
+
+  <div class="content">
+
+    <!-- ═══ PHASE 1 ═══ -->
+    <div class="phase-section ph1 open" id="ph1">
+      <div class="phase-header" onclick="togglePhase(this)">
+        <div class="phase-num">1</div>
+        <div class="phase-title-text">
+          <h2>Before Race – Part 1</h2>
+          <p>Allowed Actions Before the Change Deadline</p>
+        </div>
+        <div class="phase-chevron">▾</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-body-inner">
+
+          <!-- Postponement -->
+          <div class="section-label">Request Type A</div>
+          <div class="info-card" style="margin-bottom:24px; background:#e8f0fa; border-left:4px solid #1a3a6e;">
+            <h3><span class="card-icon">📅</span> 1. Postponement Request</h3>
+          </div>
+          <div class="steps-flow">
+            <div class="step-item">
+              <div class="step-dot" style="background:#1a5276;">1</div>
+              <div class="step-content">
+                <h3>Confirm Athlete Details</h3>
+                <p>Confirm the following with the athlete and record in the <strong>"Change Log"</strong>:</p>
+                <ul>
+                  <li>Order number</li>
+                  <li>Athlete information</li>
+                  <li>Which race to postpone to</li>
+                </ul>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot" style="background:#1a5276;">2</div>
+              <div class="step-content">
+                <h3>Process Refund in Ticketing System</h3>
+                <p>In the ticketing system, process a refund for the original order:</p>
+                <ul>
+                  <li>Refund amount: <strong>0 USD</strong></li>
+                  <li>Refund reason: <strong>Postponement</strong></li>
+                </ul>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot" style="background:#1a5276;">3</div>
+              <div class="step-content">
+                <h3>Issue Discount Code</h3>
+                <p>Issue the corresponding discount code (by race category) from the <strong>Change Log</strong> to the athlete — do this <em>before</em> tickets go on sale for the new race.</p>
+              </div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <!-- Refund -->
+          <div class="section-label">Request Type B</div>
+          <div class="info-card" style="background:#e0f5f3; border-left:4px solid var(--teal); margin-bottom:16px;">
+            <h3><span class="card-icon">💰</span> 2. Refund Request</h3>
+            <p>Athletes must request a refund by themselves via the <strong>official mini program</strong>. No CS intervention required.</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PHASE 2 ═══ -->
+    <div class="phase-section ph2" id="ph2">
+      <div class="phase-header" onclick="togglePhase(this)">
+        <div class="phase-num">2</div>
+        <div class="phase-title-text">
+          <h2>Before Race – Part 2</h2>
+          <p>After the Change Deadline — Medical Exception Only</p>
+        </div>
+        <div class="phase-chevron">▾</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-body-inner">
+
+          <div class="alert-box">
+            <span class="alert-icon">⚠️</span>
+            <p>This section applies <strong>only after the Change Deadline</strong> and is exclusively for athletes with valid medical exceptions.</p>
+          </div>
+
+          <div class="steps-flow">
+            <div class="step-item">
+              <div class="step-dot" style="background:var(--teal);">1</div>
+              <div class="step-content">
+                <h3>Confirm Order & Collect Medical Proof</h3>
+                <p>Confirm order information with the athlete and collect valid medical documentation.</p>
+                <ul>
+                  <li>Must be issued to the athlete personally (本人)</li>
+                  <li>Must be valid and authentic</li>
+                </ul>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-dot" style="background:var(--teal);">2</div>
+              <div class="step-content">
+                <h3>Select the Request Type</h3>
+                <p>Based on the athlete's preference, proceed with one of the two options below:</p>
+                <div class="branch-wrap">
+                  <div class="branch-card refund">
+                    <h4>💰 If Refund</h4>
+                    <ul>
+                      <li>Process a refund in the ticketing system</li>
+                      <li>Refund amount: <strong>50%</strong></li>
+                      <li>Refund reason: <strong>Medical Exception</strong></li>
+                    </ul>
+                  </div>
+                  <div class="branch-card postpone">
+                    <h4>📅 If Postponement</h4>
+                    <p>Follow the postponement process in <strong>Part 1</strong> (Before the Change Deadline).</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PHASE 3 ═══ -->
+    <div class="phase-section ph3" id="ph3">
+      <div class="phase-header" onclick="togglePhase(this)">
+        <div class="phase-num">3</div>
+        <div class="phase-title-text">
+          <h2>Pre-Race Preparation</h2>
+          <p>Logistics & Athlete Coordination</p>
+        </div>
+        <div class="phase-chevron">▾</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-body-inner">
+
+          <div class="two-col">
+
+            <!-- Adaptive Athletes -->
+            <div>
+              <div class="section-label">Area 1 · Adaptive Athlete Arrangements</div>
+              <div class="steps-flow">
+                <div class="step-item">
+                  <div class="step-dot" style="background:#6c3483; width:32px;height:32px;font-size:12px;">A</div>
+                  <div class="step-content">
+                    <h3>Collect & Record Information</h3>
+                    <p>Collect adaptive athlete information and record it in the spreadsheet.</p>
+                  </div>
+                </div>
+                <div class="step-item">
+                  <div class="step-dot" style="background:#6c3483; width:32px;height:32px;font-size:12px;">B</div>
+                  <div class="step-content">
+                    <h3>Create Dedicated Group</h3>
+                    <p>Set up a dedicated group including <strong>Marketing</strong> and <strong>Race Director</strong>.</p>
+                  </div>
+                </div>
+                <div class="step-item">
+                  <div class="step-dot" style="background:#6c3483; width:32px;height:32px;font-size:12px;">C</div>
+                  <div class="step-content">
+                    <h3>Communicate Required Info</h3>
+                    <p>Share key information such as:</p>
+                    <ul>
+                      <li>Guide runner arrangements</li>
+                      <li>Special needs coordination</li>
+                      <li>Race day instructions (e.g., pick up wristband at the Information Desk)</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Supplies -->
+            <div>
+              <div class="section-label">Area 2 · Ship Information Desk Supplies to Race City</div>
+              <ul class="supply-list">
+                <li class="supply-item">
+                  <span class="supply-num">1</span>
+                  <span>📦 Lost &amp; Found storage box</span>
+                </li>
+                <li class="supply-item">
+                  <span class="supply-num">2</span>
+                  <span>🟢 Green wristbands — each race category: <strong>5 spare hook &amp; loop + 5 fridge magnet</strong></span>
+                </li>
+                <li class="supply-item">
+                  <span class="supply-num">3</span>
+                  <span>🗃️ Staff personal item storage box</span>
+                </li>
+                <li class="supply-item">
+                  <span class="supply-num">4</span>
+                  <span>⏱️ Collection box for timing chips</span>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PHASE 4 ═══ -->
+    <div class="phase-section ph4" id="ph4">
+      <div class="phase-header" onclick="togglePhase(this)">
+        <div class="phase-num">4</div>
+        <div class="phase-title-text">
+          <h2>Race Day – Information Desk Operations</h2>
+          <p>Role Assignments & Responsibilities</p>
+        </div>
+        <div class="phase-chevron">▾</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-body-inner">
+
+          <div class="three-col">
+            <div class="role-card addie">
+              <h3>A · Addie — General &amp; Appeals</h3>
+              <ul>
+                <li>Handle all athlete appeals and complaints</li>
+                <li>Process appeals per the "Disputes Levels" framework</li>
+                <li>Coordinate with Xiaodi for athletes who missed the podium — reissue flags (verify identity and results)</li>
+                <li>On-site sales of finisher patches (verify results to confirm completion)</li>
+                <li>Handle other uncategorized complaints or issues (collect contact info if follow-up needed)</li>
+              </ul>
+            </div>
+            <div class="role-card xiaoye">
+              <h3>B · Xiaoye &amp; Claire — SportsPro</h3>
+              <ul>
+                <li>Adjust start times for athletes with clashing schedules between the two disciplines</li>
+                <li>Handle athletes who cannot check in</li>
+                <li>Handle same-day or post-deadline team changes due to medical reasons</li>
+              </ul>
+            </div>
+            <div class="role-card xiaoshao">
+              <h3>C · Xiaoshao — Lost &amp; Found &amp; Inquiries</h3>
+              <ul>
+                <li>Manage Lost &amp; Found</li>
+                <li>Handle general inquiries</li>
+                <li>Record and register on-site matters that require documentation</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PHASE 5 ═══ -->
+    <div class="phase-section ph5" id="ph5">
+      <div class="phase-header" onclick="togglePhase(this)">
+        <div class="phase-num">5</div>
+        <div class="phase-title-text">
+          <h2>Post-Race</h2>
+          <p>Wrap-Up, Shipping & Review</p>
+        </div>
+        <div class="phase-chevron">▾</div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-body-inner">
+
+          <div class="flow-row" style="gap:0;">
+            <div class="flow-node">
+              <h4>① Return to HQ</h4>
+              <p>Ship all Information Desk items back to Headquarters. Contact athletes and arrange return of Lost &amp; Found items.</p>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">
+              <h4>② Ship to Athletes</h4>
+              <p>Ship materials requested online (e.g., missing items, merchandise) to athletes as they come in.</p>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">
+              <h4>③ Review All Issues</h4>
+              <p>Summarize and review all on-site issues. Conduct a post-event debrief and improvement review.</p>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node" style="border-left:3px solid var(--coral);">
+              <h4>④ Sponsor Feedback</h4>
+              <p>If feedback relates to on-site sponsor materials:</p>
+              <ul style="padding-left:14px;margin-top:6px;">
+                <li style="font-size:12px;color:var(--gray-600);margin-bottom:3px;">Verify with <strong>Elisa &amp; Melody</strong></li>
+                <li style="font-size:12px;color:var(--gray-600);margin-bottom:3px;">Handle individual cases separately</li>
+                <li style="font-size:12px;color:var(--gray-600);">If multiple similar issues → escalate to <strong>Melody &amp; sponsor</strong></li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- ═══ GOVERNMENT COMPLAINT WORKFLOW ═══ -->
+  <div style="background: #1c2b3a; padding: 8px 0;">
+    <div style="max-width:1100px;margin:0 auto;padding:0 32px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 0;">
+        <span style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.35);">Standing Protocol</span>
+        <div style="flex:1;border-top:1px solid rgba(255,255,255,0.08);"></div>
+        <span style="font-size:11px;color:rgba(255,255,255,0.25);">Applies at any time · No race-day dependency</span>
+      </div>
+    </div>
+  </div>
+  <div style="background:#f0f4f8;padding:0 0 64px;">
+  <div style="max-width:1100px;margin:0 auto;padding:0 32px;">
+
+    <div class="phase-section ph-gov" id="ph-gov" style="margin-top:40px;">
+      <div class="phase-header" onclick="togglePhase(this)">
+        <div class="phase-num" style="background:rgba(255,255,255,0.15);">⚖</div>
+        <div class="phase-title-text">
+          <h2>Government Authority Complaint Handling</h2>
+          <p>Time-independent workflow — initiated upon receipt of official inquiry</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="always-on-badge"><span class="pulse"></span>Always Active</span>
+          <div class="phase-chevron">▾</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-body-inner">
+
+          <div class="gov-meta-row">
+            <span class="gov-meta-chip">🏛️ Triggered by: Official government / regulatory contact</span>
+            <span class="gov-meta-chip">⏱ Priority: High — respond promptly</span>
+            <span class="gov-meta-chip">📁 Language: English</span>
+          </div>
+
+          <div class="steps-flow">
+
+            <!-- Step 1 -->
+            <div class="step-item">
+              <div class="step-dot" style="background:#2c3e50;">1</div>
+              <div class="step-content">
+                <h3>Receive &amp; Investigate the Complaint</h3>
+                <p>Upon receiving official contact from a government authority, review the work order / inquiry in full. Then locate and examine all relevant records pertaining to the named athlete(s) or spectator(s):</p>
+                <div class="doc-checklist" style="margin-top:14px;">
+                  <div class="doc-item"><span class="doc-icon">💬</span><span>Chat &amp; communication logs with the individual</span></div>
+                  <div class="doc-item"><span class="doc-icon">🎫</span><span>Order information and registration records</span></div>
+                  <div class="doc-item"><span class="doc-icon">📋</span><span>On-site incident or issue logs</span></div>
+                  <div class="doc-item"><span class="doc-icon">🗂️</span><span>Any prior CS interaction history</span></div>
+                </div>
+                <p style="margin-top:12px; font-size:13px; color:var(--gray-400);">Goal: Build a complete factual picture of the case before drafting any response.</p>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step-item">
+              <div class="step-dot" style="background:#2c3e50;">2</div>
+              <div class="step-content">
+                <h3>Prepare a Formal Complaint Response</h3>
+                <p>Draft the response using the <strong>official Complaint Explanation Template</strong>. The submission must include all supporting evidence compiled in Step 1:</p>
+                <div class="doc-checklist" style="margin-top:14px;">
+                  <div class="doc-item"><span class="doc-icon">📸</span><span>Evidence screenshots (timestamped where possible)</span></div>
+                  <div class="doc-item"><span class="doc-icon">💬</span><span>Relevant chat / communication records</span></div>
+                  <div class="doc-item"><span class="doc-icon">🎫</span><span>Order confirmation &amp; transaction information</span></div>
+                  <div class="doc-item"><span class="doc-icon">📄</span><span>Any additional documentation supporting the account</span></div>
+                </div>
+                <div class="alert-box" style="margin-top:16px;margin-bottom:0;">
+                  <span class="alert-icon">📌</span>
+                  <p>Adhere strictly to the template structure. Do not include speculative statements or opinions — all claims must be substantiated by the attached evidence.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step-item" style="padding-bottom:0;">
+              <div class="step-dot" style="background:#2c3e50;">3</div>
+              <div class="step-content" style="padding-bottom:0;">
+                <h3>Issue Conclusion Based on Company Policy</h3>
+                <p>Review the evidence against internal regulations and policies. Formulate an official conclusion that:</p>
+                <ul style="margin-top:8px;">
+                  <li>States clearly whether the complaint is upheld, partially upheld, or not upheld</li>
+                  <li>References the specific company rule(s) or policy clause(s) applied</li>
+                  <li>Explains the outcome in plain, professional language suitable for official correspondence</li>
+                  <li>Is reviewed and approved by the appropriate team lead before submission</li>
+                </ul>
+                <div class="branch-wrap" style="margin-top:16px;">
+                  <div class="branch-card" style="background:#f0fdf4;border-color:#22c55e;">
+                    <h4 style="color:#16a34a;">✔ If Complaint Not Upheld</h4>
+                    <p>Provide a clear explanation of the policy and evidence showing the company acted appropriately. Maintain a respectful, professional tone throughout.</p>
+                  </div>
+                  <div class="branch-card" style="background:#fef2f2;border-color:#ef4444;">
+                    <h4 style="color:#dc2626;">⚠ If Complaint Upheld / Partial</h4>
+                    <p>Acknowledge the issue, state the remedial action taken or proposed, and outline any process improvements where relevant. Escalate to management as appropriate.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /steps-flow -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+
+  <footer class="site-footer">
+    CS Operations Manual · Race Information Desk · Internal Use Only
+  </footer>
+</div><!-- /main -->
+
+<button class="to-top" id="toTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+  // ── PASSWORD ──
+  const CORRECT = 'OpsTeam@2026'; // ← Change this password
+
+  function checkPw() {
+    const v = document.getElementById('pw-input').value;
+    if (v === CORRECT) {
+      document.getElementById('lock-screen').style.opacity = '0';
+      document.getElementById('lock-screen').style.transition = 'opacity 0.4s';
+      setTimeout(() => {
+        document.getElementById('lock-screen').style.display = 'none';
+        const main = document.getElementById('main');
+        main.classList.add('visible');
+        main.style.animation = 'fadeUp 0.5s both';
+      }, 400);
+    } else {
+      document.getElementById('pw-error').textContent = 'Incorrect password. Please try again.';
+      const card = document.getElementById('lock-card');
+      card.classList.remove('lock-shake');
+      void card.offsetWidth;
+      card.classList.add('lock-shake');
+    }
+  }
+
+  document.getElementById('pw-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkPw();
+    document.getElementById('pw-error').textContent = '';
+  });
+
+  let pwVisible = false;
+  function togglePw() {
+    pwVisible = !pwVisible;
+    const inp = document.getElementById('pw-input');
+    inp.type = pwVisible ? 'text' : 'password';
+    document.getElementById('pw-eye').textContent = pwVisible ? '🙈' : '👁';
+  }
+
+  // ── ACCORDION ──
+  function togglePhase(header) {
+    const section = header.closest('.phase-section');
+    section.classList.toggle('open');
+  }
+
+  // ── SCROLL TO TOP ──
+  window.addEventListener('scroll', () => {
+    const btn = document.getElementById('toTop');
+    btn.classList.toggle('visible', window.scrollY > 300);
+  });
+
+  // ── SMOOTH ANCHOR ──
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (!target.classList.contains('open')) {
+          target.classList.add('open');
+        }
+      }
+    });
+  });
+</script>
+</body>
+</html>
